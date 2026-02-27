@@ -17,14 +17,18 @@ class ChernykhSRunPerfTestThreads : public ppc::util::BaseRunPerfTests<InType, O
   void SetUp() override {
     limits_ = {{0.0, 1.0}, {0.0, 1.0}, {0.0, 1.0}};
     steps_ = {400, 400, 400};
-    auto f = [](const std::vector<double>& x) -> double { return std::sin(x[0]) * std::cos(x[1]) * std::exp(x[2]); };
+    auto f = [](const std::vector<double> &x) -> double { return std::sin(x[0]) * std::cos(x[1]) * std::exp(x[2]); };
     input_data_ = InType(limits_, steps_, f);
     reference_value_ = (1.0 - std::cos(1.0)) * std::sin(1.0) * (std::numbers::e - 1.0);
   }
 
-  bool CheckTestOutputData(OutType& output_data) final { return std::abs(reference_value_ - output_data) < 1e-1; }
+  bool CheckTestOutputData(OutType &output_data) final {
+    return std::abs(reference_value_ - output_data) < 1e-1;
+  }
 
-  InType GetTestInputData() final { return input_data_; }
+  InType GetTestInputData() final {
+    return input_data_;
+  }
 
  private:
   std::vector<std::pair<double, double>> limits_;
@@ -33,7 +37,9 @@ class ChernykhSRunPerfTestThreads : public ppc::util::BaseRunPerfTests<InType, O
   OutType reference_value_ = 0.0;
 };
 
-TEST_P(ChernykhSRunPerfTestThreads, RunPerfModes) { ExecuteTest(GetParam()); }
+TEST_P(ChernykhSRunPerfTestThreads, RunPerfModes) {
+  ExecuteTest(GetParam());
+}
 
 namespace {
 

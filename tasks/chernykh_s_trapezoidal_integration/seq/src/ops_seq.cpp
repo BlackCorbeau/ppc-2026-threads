@@ -24,7 +24,9 @@ bool ChernykhSTrapezoidalIntegrationSEQ::ValidationImpl() {
   return std::ranges::all_of(input.steps, [](int s) { return s > 0; });
 }
 
-bool ChernykhSTrapezoidalIntegrationSEQ::PreProcessingImpl() { return true; }
+bool ChernykhSTrapezoidalIntegrationSEQ::PreProcessingImpl() {
+  return true;
+}
 
 double ChernykhSTrapezoidalIntegrationSEQ::CalculatePointAndWeight(const IntegrationInType &input,
                                                                    const std::vector<std::size_t> &counters,
@@ -73,6 +75,8 @@ bool ChernykhSTrapezoidalIntegrationSEQ::RunImpl() {
   return true;
 }
 
-bool ChernykhSTrapezoidalIntegrationSEQ::PostProcessingImpl() { return true; }
+bool ChernykhSTrapezoidalIntegrationSEQ::PostProcessingImpl() {
+  return true;
+}
 
 }  // namespace chernykh_s_trapezoidal_integration

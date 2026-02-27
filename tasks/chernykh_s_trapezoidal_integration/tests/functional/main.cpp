@@ -17,7 +17,9 @@ namespace chernykh_s_trapezoidal_integration {
 
 class ChernykhSRunFuncTestsThreads : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
-  static std::string PrintTestParam(const TestType &test_param) { return std::get<2>(test_param); }
+  static std::string PrintTestParam(const TestType &test_param) {
+    return std::get<2>(test_param);
+  }
 
  protected:
   void SetUp() override {
@@ -26,9 +28,13 @@ class ChernykhSRunFuncTestsThreads : public ppc::util::BaseRunFuncTests<InType, 
     expected_output_ = std::get<1>(params);
   }
 
-  bool CheckTestOutputData(OutType &output_data) final { return std::abs(output_data - expected_output_) < 1e-3; }
+  bool CheckTestOutputData(OutType &output_data) final {
+    return std::abs(output_data - expected_output_) < 1e-3;
+  }
 
-  InType GetTestInputData() final { return input_data_; }
+  InType GetTestInputData() final {
+    return input_data_;
+  }
 
  private:
   InType input_data_{{}, {}, nullptr};
@@ -37,13 +43,25 @@ class ChernykhSRunFuncTestsThreads : public ppc::util::BaseRunFuncTests<InType, 
 
 namespace {
 
-TEST_P(ChernykhSRunFuncTestsThreads, SEQIntegration) { ExecuteTest(GetParam()); }
+TEST_P(ChernykhSRunFuncTestsThreads, SEQIntegration) {
+  ExecuteTest(GetParam());
+}
 
-double FConst(const std::vector<double> & /*unused*/) { return 5.0; }
-double FLinear(const std::vector<double> &x) { return x[0]; }
-double FSum2d(const std::vector<double> &x) { return x[0] + x[1]; }
-double FParabola(const std::vector<double> &x) { return x[0] * x[0]; }
-double FSin(const std::vector<double> &x) { return std::sin(x[0]); }
+double FConst(const std::vector<double> & /*unused*/) {
+  return 5.0;
+}
+double FLinear(const std::vector<double> &x) {
+  return x[0];
+}
+double FSum2d(const std::vector<double> &x) {
+  return x[0] + x[1];
+}
+double FParabola(const std::vector<double> &x) {
+  return x[0] * x[0];
+}
+double FSin(const std::vector<double> &x) {
+  return std::sin(x[0]);
+}
 
 const std::array<TestType, 6> kTestParam = {
     std::make_tuple(InType({{0.0, 1.0}}, {1000}, FLinear), 0.5, "Linear_1D"),
