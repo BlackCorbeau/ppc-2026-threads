@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <stack>
 #include <vector>
 
 #include "morozova_s_strassen_multiplication/common/include/common.hpp"
@@ -9,6 +10,15 @@
 namespace morozova_s_strassen_multiplication {
 
 namespace {
+
+struct StrassenTask {
+  Matrix a;
+  Matrix b;
+  int leaf_size;
+  int depth;
+  std::vector<Matrix> *results;
+  int result_index;
+};
 
 Matrix AddMatrixImpl(const Matrix &a, const Matrix &b) {
   int n = a.size;
@@ -84,38 +94,28 @@ Matrix MergeMatricesImpl(const Matrix &m11, const Matrix &m12, const Matrix &m21
   return result;
 }
 
-Matrix MultiplyStrassenImpl(const Matrix &a, const Matrix &b, int leaf_size) {
+Matrix MultiplyStrassenIterative(const Matrix &a, const Matrix &b, int leaf_size) {
   int n = a.size;
 
-  if (n <= leaf_size) {
-    return MultiplyStandardImpl(a, b);
-  }
-
-  if (n % 2 != 0) {
+  if (n <= leaf_size || n % 2 != 0) {
     return MultiplyStandardImpl(a, b);
   }
 
   int half = n / 2;
 
-  Matrix a11(half);
-  Matrix a12(half);
-  Matrix a21(half);
-  Matrix a22(half);
-  Matrix b11(half);
-  Matrix b12(half);
-  Matrix b21(half);
-  Matrix b22(half);
+  Matrix a11(half), a12(half), a21(half), a22(half);
+  Matrix b11(half), b12(half), b21(half), b22(half);
 
   SplitMatrixImpl(a, a11, a12, a21, a22);
   SplitMatrixImpl(b, b11, b12, b21, b22);
 
-  Matrix p1 = MultiplyStrassenImpl(a11, SubtractMatrixImpl(b12, b22), leaf_size);
-  Matrix p2 = MultiplyStrassenImpl(AddMatrixImpl(a11, a12), b22, leaf_size);
-  Matrix p3 = MultiplyStrassenImpl(AddMatrixImpl(a21, a22), b11, leaf_size);
-  Matrix p4 = MultiplyStrassenImpl(a22, SubtractMatrixImpl(b21, b11), leaf_size);
-  Matrix p5 = MultiplyStrassenImpl(AddMatrixImpl(a11, a22), AddMatrixImpl(b11, b22), leaf_size);
-  Matrix p6 = MultiplyStrassenImpl(SubtractMatrixImpl(a12, a22), AddMatrixImpl(b21, b22), leaf_size);
-  Matrix p7 = MultiplyStrassenImpl(SubtractMatrixImpl(a11, a21), AddMatrixImpl(b11, b12), leaf_size);
+  Matrix p1 = MultiplyStandardImpl(a11, SubtractMatrixImpl(b12, b22));
+  Matrix p2 = MultiplyStandardImpl(AddMatrixImpl(a11, a12), b22);
+  Matrix p3 = MultiplyStandardImpl(AddMatrixImpl(a21, a22), b11);
+  Matrix p4 = MultiplyStandardImpl(a22, SubtractMatrixImpl(b21, b11));
+  Matrix p5 = MultiplyStandardImpl(AddMatrixImpl(a11, a22), AddMatrixImpl(b11, b22));
+  Matrix p6 = MultiplyStandardImpl(SubtractMatrixImpl(a12, a22), AddMatrixImpl(b21, b22));
+  Matrix p7 = MultiplyStandardImpl(SubtractMatrixImpl(a11, a21), AddMatrixImpl(b11, b12));
 
   Matrix c11 = AddMatrixImpl(SubtractMatrixImpl(AddMatrixImpl(p5, p4), p2), p6);
   Matrix c12 = AddMatrixImpl(p1, p2);
@@ -188,7 +188,7 @@ bool MorozovaSStrassenMultiplicationSEQ::RunImpl() {
   if (n_ <= leaf_size) {
     c_ = MultiplyStandard(a_, b_);
   } else {
-    c_ = MultiplyStrassen(a_, b_, leaf_size);
+    c_ = MultiplyStrassenIterative(a_, b_, leaf_size);
   }
 
   return true;
@@ -236,7 +236,7 @@ Matrix MorozovaSStrassenMultiplicationSEQ::MergeMatrices(const Matrix &m11, cons
 }
 
 Matrix MorozovaSStrassenMultiplicationSEQ::MultiplyStrassen(const Matrix &a, const Matrix &b, int leaf_size) {
-  return MultiplyStrassenImpl(a, b, leaf_size);
+  return MultiplyStrassenIterative(a, b, leaf_size);
 }
 
 }  // namespace morozova_s_strassen_multiplication
