@@ -109,11 +109,7 @@ bool MorozovaSStrassenMultiplicationSEQ::ValidationImpl() {
   }
 
   size_t expected_size = 1 + (2 * static_cast<size_t>(n) * static_cast<size_t>(n));
-  if (GetInput().size() != expected_size) {
-    return false;
-  }
-
-  return true;
+  return GetInput().size() == expected_size;
 }
 
 bool MorozovaSStrassenMultiplicationSEQ::PreProcessingImpl() {
