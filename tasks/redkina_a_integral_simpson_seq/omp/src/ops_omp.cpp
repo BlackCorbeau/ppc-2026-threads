@@ -106,38 +106,38 @@ bool RedkinaAIntegralSimpsonOMP::RunImpl() {
 
   double total_sum = 0.0;
 
-#pragma omp parallel for reduction(+ : total_sum) default(none) shared(a_ref, h_ref, n_ref, func_ref, dim_local)
-  for (int i0 = 0; i0 <= static_cast<int>(n_ref[0]); ++i0) {
-    double coeff0 = SimpsonCoeff(i0, static_cast<int>(n_ref[0]));
-    double local_sum = 0.0;
+#pragma omp parallel default(none) shared(a_ref, h_ref, n_ref, func_ref, dim_local, total_sum)
+  {
+    // Один вектор на поток, будет автоматически уничтожен при выходе из области
+    std::vector<double> point(dim_local);
 
-    // Используем thread_local вектор для хранения точки
-    std::vector<double> &point = tls_point;
-    if (point.size() != dim_local) {
-      point.resize(dim_local);
-    }
+#pragma omp for reduction(+ : total_sum)
+    for (int i0 = 0; i0 <= static_cast<int>(n_ref[0]); ++i0) {
+      double coeff0 = SimpsonCoeff(i0, static_cast<int>(n_ref[0]));
+      double local_sum = 0.0;
 
-    std::array<int, kMaxDim> indices{};
-    indices[0] = i0;
-    for (size_t d = 1; d < dim_local; ++d) {
-      indices[d] = 0;
-    }
-
-    do {
-      point[0] = a_ref[0] + static_cast<double>(i0) * h_ref[0];
-
-      double w_prod = 1.0;
+      std::array<int, kMaxDim> indices{};
+      indices[0] = i0;
       for (size_t d = 1; d < dim_local; ++d) {
-        int idx = indices[d];
-        point[d] = a_ref[d] + static_cast<double>(idx) * h_ref[d];
-        int w = SimpsonCoeff(idx, static_cast<int>(n_ref[d]));
-        w_prod *= static_cast<double>(w);
+        indices[d] = 0;
       }
 
-      local_sum += coeff0 * w_prod * func_ref(point);
-    } while (AdvanceIndicesFromLevel(indices, n_ref, 1, dim_local));
+      do {
+        point[0] = a_ref[0] + static_cast<double>(i0) * h_ref[0];
 
-    total_sum += local_sum;
+        double w_prod = 1.0;
+        for (size_t d = 1; d < dim_local; ++d) {
+          int idx = indices[d];
+          point[d] = a_ref[d] + static_cast<double>(idx) * h_ref[d];
+          int w = SimpsonCoeff(idx, static_cast<int>(n_ref[d]));
+          w_prod *= static_cast<double>(w);
+        }
+
+        local_sum += coeff0 * w_prod * func_ref(point);
+      } while (AdvanceIndicesFromLevel(indices, n_ref, 1, dim_local));
+
+      total_sum += local_sum;
+    }
   }
 
   result_ = (h_prod / denominator) * total_sum;
