@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "maslova_u_mult_matr_crs/common/include/common.hpp"
 #include "task/include/task.hpp"
 
@@ -17,9 +19,9 @@ class MaslovaUMultMatrOMP : public BaseTask {
   bool PreProcessingImpl() override;
   bool RunImpl() override;
   bool PostProcessingImpl() override;
-  int GetRowNNZ(int i, const CRSMatrix &a, const CRSMatrix &b, std::vector<int> &marker);
-  void FillRowValues(int i, const CRSMatrix &a, const CRSMatrix &b, CRSMatrix &c, std::vector<double> &acc,
-                     std::vector<int> &marker, std::vector<int> &used);
+  static int GetRowNNZ(int i, const CRSMatrix &a, const CRSMatrix &b, std::vector<int> &marker);
+  static void FillRowValues(int i, const CRSMatrix &a, const CRSMatrix &b, CRSMatrix &c, std::vector<double> &acc,
+                            std::vector<int> &marker, std::vector<int> &used);
 };
 
 }  // namespace maslova_u_mult_matr_crs

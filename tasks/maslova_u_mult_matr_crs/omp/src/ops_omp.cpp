@@ -76,7 +76,7 @@ void MaslovaUMultMatrOMP::FillRowValues(int i, const CRSMatrix &a, const CRSMatr
     }
   }
 
-  std::ranges::sort(used);  // Используем ranges версию
+  std::ranges::sort(used);
 
   int write_pos = c.row_ptr[i];
   for (int col : used) {
