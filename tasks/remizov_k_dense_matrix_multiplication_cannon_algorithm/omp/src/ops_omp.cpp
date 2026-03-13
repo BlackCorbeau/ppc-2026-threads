@@ -94,8 +94,9 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmOmp::RunCannonCycle(
     std::vector<std::vector<std::vector<std::vector<double>>>> &b_blocks,
     std::vector<std::vector<std::vector<std::vector<double>>>> &c_blocks, int block_size, int block_count) {
   for (int step = 0; step < block_count; ++step) {
-    // Параллельное умножение блоков
-#pragma omp parallel for collapse(2) schedule(dynamic)
+    // Параллельное умножение блоков с явным указанием переменных
+#pragma omp parallel for collapse(2) schedule(dynamic) default(none) \
+    shared(a_blocks, b_blocks, c_blocks, block_size, block_count)
     for (int i = 0; i < block_count; ++i) {
       for (int j = 0; j < block_count; ++j) {
         RemizovKDenseMatrixMultiplicationCannonAlgorithmOmp::MultiplyBlock(a_blocks[i][j], b_blocks[i][j],
@@ -114,7 +115,8 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmOmp::InitializeBlocks(
     const std::vector<std::vector<double>> &matrix_a, const std::vector<std::vector<double>> &matrix_b,
     std::vector<std::vector<std::vector<std::vector<double>>>> &a_blocks,
     std::vector<std::vector<std::vector<std::vector<double>>>> &b_blocks, int block_size, int block_count) {
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) default(none) \
+    shared(matrix_a, matrix_b, a_blocks, b_blocks, block_size, block_count)
   for (int i = 0; i < block_count; ++i) {
     for (int j = 0; j < block_count; ++j) {
       int shift_value = (i + j) % block_count;
@@ -132,7 +134,7 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmOmp::InitializeBlocks(
 void RemizovKDenseMatrixMultiplicationCannonAlgorithmOmp::AssembleOutput(
     std::vector<std::vector<std::vector<std::vector<double>>>> &c_blocks, std::vector<std::vector<double>> &output,
     int block_size, int block_count) {
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) default(none) shared(c_blocks, output, block_size, block_count)
   for (int i = 0; i < block_count; ++i) {
     for (int j = 0; j < block_count; ++j) {
       for (int bi = 0; bi < block_size; ++bi) {
