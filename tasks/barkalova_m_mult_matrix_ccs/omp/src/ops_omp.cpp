@@ -1,6 +1,5 @@
 #include "barkalova_m_mult_matrix_ccs/omp/include/ops_omp.hpp"
 
-#include <atomic>
 #include <cmath>
 #include <complex>
 #include <cstddef>
@@ -127,12 +126,13 @@ bool BarkalovaMMultMatrixCcsOMP::RunImpl() {
     c.rows = a.rows;
     c.cols = b.cols;
 
-    int num_threads = omp_get_max_threads();
+    // int num_threads = omp_get_max_threads();
 
     std::vector<std::vector<int>> col_rows(c.cols);
     std::vector<std::vector<Complex>> col_vals(c.cols);
 
-#pragma omp parallel for num_threads(num_threads) schedule(static)
+// #pragma omp parallel for num_threads(num_threads) schedule(static)
+#pragma omp parallel for schedule(static) default(none) shared(at, b, c, col_rows, col_vals)
     for (int j = 0; j < c.cols; j++) {
       std::vector<int> rows;
       std::vector<Complex> vals;

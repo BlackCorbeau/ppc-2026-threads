@@ -17,12 +17,6 @@ class BarkalovaMMultMatrixCcsOMP : public BaseTask {
   bool PreProcessingImpl() override;
   bool RunImpl() override;
   bool PostProcessingImpl() override;
-
-  struct ThreadData {
-    std::vector<Complex> values;
-    std::vector<int> rows;
-    std::vector<int> col_boundaries;
-  };
 };
 
 }  // namespace barkalova_m_mult_matrix_ccs
