@@ -12,7 +12,6 @@ namespace {
 
 constexpr std::size_t kCutoff = 256;
 constexpr std::size_t kBlockSize = 64;
-constexpr int kParallelDepth = 1;
 
 std::size_t NextPow2(std::size_t x) {
   if (x <= 1) {
