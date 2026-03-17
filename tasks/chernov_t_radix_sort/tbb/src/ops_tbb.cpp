@@ -32,6 +32,12 @@ constexpr int kBitsPerDigit = 8;
 constexpr int kRadix = 1 << kBitsPerDigit;
 constexpr uint32_t kSignMask = 0x80000000U;
 
+static void ComputePrefixSums(std::vector<int> &count) {
+  for (size_t idx = 1; idx < count.size(); ++idx) {
+    count[idx] += count[idx - 1];
+  }
+}
+
 void ChernovTRadixSortTBB::RadixSortLSD(std::vector<int> &data) {
   if (data.empty()) {
     return;
@@ -64,21 +70,29 @@ void ChernovTRadixSortTBB::RadixSortLSD(std::vector<int> &data) {
 
     std::vector<int> count(kRadix, 0);
     local_counts.combine_each([&count](const std::vector<int> &c) {
-      for (int d = 0; d < kRadix; ++d) {
-        count[static_cast<size_t>(d)] += c[static_cast<size_t>(d)];
+      for (int digit_idx = 0; digit_idx < kRadix; ++digit_idx) {
+        count[static_cast<size_t>(digit_idx)] += c[static_cast<size_t>(digit_idx)];
       }
     });
 
-    for (int i = 1; i < kRadix; ++i) {
-      count[static_cast<size_t>(i)] += count[static_cast<size_t>(i - 1)];
-    }
+    ComputePrefixSums(count);
 
-    for (size_t i = n; i-- > 0;) {
-      uint32_t val = temp[i];
-      int digit = static_cast<int>((val >> shift) & 0xFFU);
-      size_t pos = static_cast<size_t>(--count[static_cast<size_t>(digit)]);
-      buffer[pos] = val;
-    }
+    tbb::combinable<std::vector<int>> local_pos([&count]() {
+      std::vector<int> pos(kRadix);
+      std::copy(count.begin(), count.end(), pos.begin());
+      return pos;
+    });
+
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, n),
+                      [&local_pos, &buffer, &temp, shift](const tbb::blocked_range<size_t> &r) {
+      auto &my_pos = local_pos.local();
+      for (size_t i = r.begin(); i != r.end(); ++i) {
+        uint32_t val = temp[i];
+        int digit = static_cast<int>((val >> shift) & 0xFFU);
+        auto pos = static_cast<size_t>(--my_pos[static_cast<size_t>(digit)]);
+        buffer[pos] = val;
+      }
+    });
 
     temp.swap(buffer);
   }
@@ -94,7 +108,9 @@ void ChernovTRadixSortTBB::SimpleMerge(const std::vector<int> &left, const std::
                                        std::vector<int> &result) {
   result.resize(left.size() + right.size());
 
-  size_t i = 0, j = 0, k = 0;
+  size_t i = 0;
+  size_t j = 0;
+  size_t k = 0;
 
   while (i < left.size() && j < right.size()) {
     if (left[i] <= right[j]) {
