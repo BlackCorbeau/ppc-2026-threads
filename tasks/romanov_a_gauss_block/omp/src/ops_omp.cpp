@@ -29,7 +29,7 @@ bool RomanovAGaussBlockOMP::PreProcessingImpl() {
 
 namespace {
 
-constexpr int block_size = 32;
+constexpr int kBlockSize = 32;
 
 int ApplyKernel(const std::vector<uint8_t> &img, int row, int col, int channel, int width, int height,
                 const std::array<std::array<int, 3>, 3> &kernel) {
@@ -51,8 +51,8 @@ void ProcessFullBlock(const std::vector<uint8_t> &initial_picture, std::vector<u
                       int height, int start_row, int start_col) {
   const std::array<std::array<int, 3>, 3> kernel = {{{1, 2, 1}, {2, 4, 2}, {1, 2, 1}}};
 
-  for (int row = start_row; row < start_row + block_size; ++row) {
-    for (int col = start_col; col < start_col + block_size; ++col) {
+  for (int row = start_row; row < start_row + kBlockSize; ++row) {
+    for (int col = start_col; col < start_col + kBlockSize; ++col) {
       for (int channel = 0; channel < 3; ++channel) {
         int sum = ApplyKernel(initial_picture, row, col, channel, width, height, kernel);
         int result_value = (sum + 8) / 16;
@@ -68,8 +68,8 @@ void ProcessPartBlock(const std::vector<uint8_t> &initial_picture, std::vector<u
                       int height, int start_row, int start_col) {
   const std::array<std::array<int, 3>, 3> kernel = {{{1, 2, 1}, {2, 4, 2}, {1, 2, 1}}};
 
-  const int end_row = std::min(height, start_row + block_size);
-  const int end_col = std::min(width, start_col + block_size);
+  const int end_row = std::min(height, start_row + kBlockSize);
+  const int end_col = std::min(width, start_col + kBlockSize);
 
   for (int row = start_row; row < end_row; ++row) {
     for (int col = start_col; col < end_col; ++col) {
@@ -94,24 +94,24 @@ bool RomanovAGaussBlockOMP::RunImpl() {
   std::vector<uint8_t> result_picture(static_cast<size_t>(height * width * 3));
 
 #pragma omp parallel for schedule(static) default(none) shared(initial_picture, result_picture, width, height)
-  for (int start_row = 0; start_row < (height + 1 - block_size); start_row += block_size) {
-    for (int start_col = 0; start_col < (width + 1 - block_size); start_col += block_size) {
+  for (int start_row = 0; start_row < (height + 1 - kBlockSize); start_row += kBlockSize) {
+    for (int start_col = 0; start_col < (width + 1 - kBlockSize); start_col += kBlockSize) {
       ProcessFullBlock(initial_picture, result_picture, width, height, start_row, start_col);
     }
   }
 
 #pragma omp parallel for schedule(static) default(none) shared(initial_picture, result_picture, width, height)
-  for (int start_row = 0; start_row < (height + 1 - block_size); start_row += block_size) {
-    ProcessPartBlock(initial_picture, result_picture, width, height, start_row, (width - width % block_size));
+  for (int start_row = 0; start_row < (height + 1 - kBlockSize); start_row += kBlockSize) {
+    ProcessPartBlock(initial_picture, result_picture, width, height, start_row, width - (width % kBlockSize));
   }
 
 #pragma omp parallel for schedule(static) default(none) shared(initial_picture, result_picture, width, height)
-  for (int start_col = 0; start_col < (width + 1 - block_size); start_col += block_size) {
-    ProcessPartBlock(initial_picture, result_picture, width, height, height - (height % block_size), start_col);
+  for (int start_col = 0; start_col < (width + 1 - kBlockSize); start_col += kBlockSize) {
+    ProcessPartBlock(initial_picture, result_picture, width, height, height - (height % kBlockSize), start_col);
   }
 
-  ProcessPartBlock(initial_picture, result_picture, width, height, height - (height % block_size),
-                   width - (width % block_size));
+  ProcessPartBlock(initial_picture, result_picture, width, height, height - (height % kBlockSize),
+                   width - (width % kBlockSize));
 
   GetOutput() = result_picture;
   return true;
