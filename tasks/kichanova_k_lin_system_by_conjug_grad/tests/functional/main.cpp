@@ -67,7 +67,8 @@ LinSystemData CreateTridiagonalSystem(int n, size_t n_squared) {
 }
 
 LinSystemData CreateRandomSPDSystem(int n, size_t n_squared) {
-  std::mt19937 gen(42);
+  std::random_device rd;
+  std::mt19937 gen(rd());
   std::uniform_real_distribution<> dis(-1.0, 1.0);
 
   LinSystemData data;
