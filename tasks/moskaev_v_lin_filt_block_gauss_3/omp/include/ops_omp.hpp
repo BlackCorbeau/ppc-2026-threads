@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
+
 #include "moskaev_v_lin_filt_block_gauss_3/common/include/common.hpp"
 #include "task/include/task.hpp"
 
