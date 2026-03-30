@@ -5,6 +5,7 @@
 #include "ovsyannikov_n_simpson_method/common/include/common.hpp"
 #include "ovsyannikov_n_simpson_method/omp/include/ops_omp.hpp"
 #include "ovsyannikov_n_simpson_method/seq/include/ops_seq.hpp"
+#include "ovsyannikov_n_simpson_method/stl/include/ops_stl.hpp"
 #include "ovsyannikov_n_simpson_method/tbb/include/ops_tbb.hpp"
 #include "util/include/perf_test_util.hpp"
 
@@ -42,6 +43,9 @@ const auto kPerfTasksOMP =
 const auto kPerfTasksTBB =
     ppc::util::MakeAllPerfTasks<InType, OvsyannikovNSimpsonMethodTBB>(PPC_SETTINGS_ovsyannikov_n_simpson_method);
 
+const auto kPerfTasksSTL =
+    ppc::util::MakeAllPerfTasks<InType, OvsyannikovNSimpsonMethodSTL>(PPC_SETTINGS_ovsyannikov_n_simpson_method);
+
 const auto kPerfTestName = OvsyannikovNRunPerfTestThreads::CustomPerfTestName;
 
 INSTANTIATE_TEST_SUITE_P(SimpsonPerf_SEQ, OvsyannikovNRunPerfTestThreads, ppc::util::TupleToGTestValues(kPerfTasksSEQ),
@@ -53,5 +57,7 @@ INSTANTIATE_TEST_SUITE_P(SimpsonPerf_OMP, OvsyannikovNRunPerfTestThreads, ppc::u
 INSTANTIATE_TEST_SUITE_P(SimpsonPerf_TBB, OvsyannikovNRunPerfTestThreads, ppc::util::TupleToGTestValues(kPerfTasksTBB),
                          kPerfTestName);
 
+INSTANTIATE_TEST_SUITE_P(SimpsonPerf_STL, OvsyannikovNRunPerfTestThreads, ppc::util::TupleToGTestValues(kPerfTasksSTL),
+                         kPerfTestName);
 }  // namespace
 }  // namespace ovsyannikov_n_simpson_method
