@@ -5,13 +5,13 @@
 
 namespace nikitina_v_hoar_sort_batcher {
 
-class HoareSortBatcherTBB : public BaseTask {
+class HoareSortBatcherSTL : public BaseTask {
  public:
   static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() {
-    return ppc::task::TypeOfTask::kTBB;
+    return ppc::task::TypeOfTask::kSTL;
   }
 
-  explicit HoareSortBatcherTBB(const InType &in);
+  explicit HoareSortBatcherSTL(const InType &in);
 
  private:
   bool ValidationImpl() override;
