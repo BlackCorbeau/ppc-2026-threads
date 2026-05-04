@@ -21,15 +21,18 @@
 ## 2. Постановка задачи
 
 Входные данные:
+
 - `block_dim` — размер блока (положительное целое число);
 - `matrix_a`, `matrix_b` — квадратные матрицы размера `N × N` (заданы как `vector<vector<double>>`).
 
 Условия корректности:
+
 - `matrix_a` и `matrix_b` не пусты;
 - `matrix_a` и `matrix_b` квадратные, имеют одинаковый размер `N`;
 - `N` делится на `block_dim` без остатка.
 
 Выходные данные:
+
 - `matrix_c` — результат умножения `matrix_a * matrix_b` (также матрица `N × N`).
 
 Требуется реализовать алгоритм Кэннона с блочным разбиением и обеспечить его корректную работу для
@@ -64,10 +67,12 @@
 декомпозицию по блокам, однако отличаются способом координации потоков.
 
 ### 4.1 Последовательная версия (SEQ)
+
 Полностью повторяет базовый алгоритм без какой-либо параллелизации. Используется как эталон для
 расчёта ускорения.
 
 ### 4.2 OpenMP (OMP)
+
 - **Умножение блоков**: директива `#pragma omp parallel for collapse(2)` охватывает циклы по `i` и `j`
   для всех пар блоков. Каждое умножение блока выполняется последовательно.
 - **Инициализация блоков и сборка результата**: аналогично используются
@@ -75,6 +80,7 @@
 - **Сдвиги блоков** остались последовательными (не распараллелены, так как их доля в общем времени мала).
 
 ### 4.3 Intel TBB (TBB)
+
 - **Умножение блоков**: `tbb::parallel_for` с `tbb::blocked_range2d<int>` распределяет пары `(i,j)`
   по потокам.
 - **Сдвиги**: `tbb::parallel_for` по строкам (для сдвига влево) и по столбцам (для сдвига вверх).
@@ -82,6 +88,7 @@
 - Внутри каждого блока умножение остаётся последовательным.
 
 ### 4.4 STL (std::thread)
+
 - Реализована вспомогательная функция `ParallelFor`, которая разбивает диапазон итераций на равные
   части и запускает `std::thread` для каждой части. Количество потоков определяется как
   `hardware_concurrency()`.
@@ -92,7 +99,9 @@
 - **Инициализация и сборка**: `ParallelFor2D`.
 
 ### 4.5 Комбинированная (ALL)
+
 Содержит элементы всех предыдущих подходов (OpenMP, TBB, STL). Конкретно:
+
 - `MultiplyBlock` использует OpenMP для распараллеливания внутренних циклов самого блока.
 - Сдвиги реализованы через `std::thread`.
 - Цикл Кэннона, инициализация и сборка используют `tbb::parallel_for`.
@@ -103,9 +112,10 @@
 ## 5. Детали реализации
 
 ### 5.1 Структура проекта
+
 Проект организован по технологии «конвейер» (pipeline) и содержит следующие каталоги:
 
-```
+```cpp
 remizov_k_dense_matrix_multiplication_cannon_algorithm/
 ├── common/               – общие типы и определения
 ├── seq/                  – последовательная версия
@@ -114,17 +124,19 @@ remizov_k_dense_matrix_multiplication_cannon_algorithm/
 ├── stl/                  – версия на std::thread
 ├── all/                  – комбинированная версия
 └── tests/                – функциональные и нагрузочные тесты
-```
+```cpp
 
 Каждая реализация предоставляет свой класс, унаследованный от `BaseTask` (см. `common.hpp` и `task.hpp`).
 
 ### 5.2 Основные методы класса
+
 - `ValidationImpl` — проверяет корректность входных данных.
 - `PreProcessingImpl` — очищает выходной вектор.
 - `RunImpl` — выполняет умножение (блочное разбиение, инициализация, цикл Кэннона, сборка).
 - `PostProcessingImpl` — всегда возвращает `true`.
 
 ### 5.3 Вспомогательные статические методы
+
 - `MultiplyBlock` — умножение двух блоков (в последовательной и TBB/STL версиях — тройной вложенный
   цикл, в OMP и ALL — с OpenMP-прагмами).
 - `InitializeBlocks` — заполнение блоков A и B с учётом начального сдвига (также распараллелено).
@@ -133,10 +145,13 @@ remizov_k_dense_matrix_multiplication_cannon_algorithm/
 - `AssembleOutput` — сборка итоговой матрицы из блоков C.
 
 ### 5.4 Особенности работы с памятью
+
 Для хранения блоков используется четырёхмерный вектор:
+
 ```cpp
 std::vector<std::vector<std::vector<std::vector<double>>>>
-```
+```cpp
+
 Такая структура удобна для индексации `blocks[i][j][bi][bj]`, но приводит к фрагментации памяти
 и потенциальным кэш-промахам. Однако для целей сравнения реализаций это приемлемо, так как все версии
 используют одинаковое представление.
@@ -239,11 +254,11 @@ std::vector<std::vector<std::vector<std::vector<double>>>>
 1. Cannon, L. E. (1969). *A cellular computer to implement the Kalman filter algorithm*. Ph.D. thesis,
    Montana State University.
 2. OpenMP Architecture Review Group. *OpenMP Application Program Interface*.
-   https://www.openmp.org/
+   <https://www.openmp.org/>
 3. Intel Threading Building Blocks (TBB) Documentation.
-   https://www.intel.com/content/www/us/en/developer/tools/oneapi/onetbb.html
+   <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onetbb.html>
 4. C++ Standard Library: `std::thread`.
-   https://en.cppreference.com/w/cpp/thread/thread
+   <https://en.cppreference.com/w/cpp/thread/thread>
 
 ## Приложение (краткий фрагмент кода)
 
@@ -265,4 +280,4 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmOmp::RunCannonCycle(
     }
   }
 }
-```
+```cpp
