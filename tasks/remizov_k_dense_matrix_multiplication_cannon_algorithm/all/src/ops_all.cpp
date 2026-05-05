@@ -7,6 +7,7 @@
 #  include <omp.h>
 #endif
 
+#include <algorithm>
 #include <cstddef>
 #include <thread>
 #include <utility>
@@ -57,7 +58,7 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmAll::MultiplyBlock(const st
                                                                         std::vector<std::vector<double>> &c,
                                                                         int block_size) {
 #ifdef _OPENMP
-#  pragma omp parallel for collapse(2) schedule(static)
+#  pragma omp parallel for collapse(2) schedule(static) default(none) shared(a, b, c, block_size)
 #endif
   for (int i = 0; i < block_size; ++i) {
     for (int j = 0; j < block_size; ++j) {
@@ -72,14 +73,14 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmAll::MultiplyBlock(const st
 
 void RemizovKDenseMatrixMultiplicationCannonAlgorithmAll::ShiftBlocksLeft(
     std::vector<std::vector<std::vector<std::vector<double>>>> &matrix_blocks, int block_count) {
-  unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
+  const unsigned int num_threads = std::max(1U, std::thread::hardware_concurrency());
   std::vector<std::thread> threads;
   threads.reserve(num_threads);
 
-  int rows_per_thread = (block_count + num_threads - 1) / num_threads;
-  for (unsigned int t = 0; t < num_threads; ++t) {
-    int start = t * rows_per_thread;
-    int end = std::min(start + rows_per_thread, block_count);
+  const int rows_per_thread = (block_count + static_cast<int>(num_threads) - 1) / static_cast<int>(num_threads);
+  for (unsigned int thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
+    const int start = static_cast<int>(thread_idx) * rows_per_thread;
+    const int end = std::min(start + rows_per_thread, block_count);
     if (start >= end) {
       break;
     }
@@ -94,20 +95,22 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmAll::ShiftBlocksLeft(
     });
   }
   for (auto &th : threads) {
-    th.join();
+    if (th.joinable()) {
+      th.join();
+    }
   }
 }
 
 void RemizovKDenseMatrixMultiplicationCannonAlgorithmAll::ShiftBlocksUp(
     std::vector<std::vector<std::vector<std::vector<double>>>> &matrix_blocks, int block_count) {
-  unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
+  const unsigned int num_threads = std::max(1U, std::thread::hardware_concurrency());
   std::vector<std::thread> threads;
   threads.reserve(num_threads);
 
-  int cols_per_thread = (block_count + num_threads - 1) / num_threads;
-  for (unsigned int t = 0; t < num_threads; ++t) {
-    int start = t * cols_per_thread;
-    int end = std::min(start + cols_per_thread, block_count);
+  const int cols_per_thread = (block_count + static_cast<int>(num_threads) - 1) / static_cast<int>(num_threads);
+  for (unsigned int thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
+    const int start = static_cast<int>(thread_idx) * cols_per_thread;
+    const int end = std::min(start + cols_per_thread, block_count);
     if (start >= end) {
       break;
     }
@@ -122,7 +125,9 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmAll::ShiftBlocksUp(
     });
   }
   for (auto &th : threads) {
-    th.join();
+    if (th.joinable()) {
+      th.join();
+    }
   }
 }
 
@@ -154,7 +159,7 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmAll::InitializeBlocks(
   tbb::parallel_for(tbb::blocked_range2d<int>(0, block_count, 0, block_count), [&](const tbb::blocked_range2d<int> &r) {
     for (int i = r.rows().begin(); i != r.rows().end(); ++i) {
       for (int j = r.cols().begin(); j != r.cols().end(); ++j) {
-        int shift = (i + j) % block_count;
+        const int shift = (i + j) % block_count;
         for (int bi = 0; bi < block_size; ++bi) {
           for (int bj = 0; bj < block_size; ++bj) {
             a_blocks[i][j][bi][bj] = matrix_a[(i * block_size) + bi][(shift * block_size) + bj];
@@ -185,12 +190,12 @@ void RemizovKDenseMatrixMultiplicationCannonAlgorithmAll::AssembleOutput(
 bool RemizovKDenseMatrixMultiplicationCannonAlgorithmAll::RunImpl() {
   const auto &params = GetInput();
 
-  int block_dim = std::get<0>(params);
+  const int block_dim = std::get<0>(params);
   const auto &source_a = std::get<1>(params);
   const auto &source_b = std::get<2>(params);
 
-  int matrix_size = static_cast<int>(source_a.size());
-  int blocks_per_dim = matrix_size / block_dim;
+  const int matrix_size = static_cast<int>(source_a.size());
+  const int blocks_per_dim = matrix_size / block_dim;
 
   using Block4D = std::vector<std::vector<std::vector<std::vector<double>>>>;
   Block4D blocks_a(blocks_per_dim, std::vector<std::vector<std::vector<double>>>(
